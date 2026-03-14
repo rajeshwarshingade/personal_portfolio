@@ -1013,6 +1013,105 @@ ul { list-style: none; }
 }
 
 /* ==========================================
+   ACHIEVEMENTS SECTION
+   ========================================== */
+.achievements {
+    background: var(--bg-secondary);
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.achievement-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.achievement-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-glow);
+}
+
+.achievement-card:hover::before {
+    opacity: 1;
+}
+
+.achievement-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: var(--radius-md);
+    background: rgba(108, 99, 255, 0.12);
+    color: var(--accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    transition: var(--transition);
+}
+
+.achievement-card:hover .achievement-icon {
+    transform: scale(1.06);
+    background: rgba(108, 99, 255, 0.2);
+}
+
+.achievement-content {
+    flex: 1;
+}
+
+.achievement-year {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 100px;
+    border: 1px solid rgba(0, 212, 170, 0.25);
+    background: rgba(0, 212, 170, 0.08);
+    color: var(--accent-secondary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.achievement-title {
+    font-size: 1.08rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.achievement-text {
+    font-size: 0.92rem;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+/* ==========================================
    CONTACT SECTION
    ========================================== */
 .contact-cards {
@@ -1268,6 +1367,14 @@ ul { list-style: none; }
         grid-template-columns: 1fr;
     }
 
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .achievement-card {
+        padding: 24px;
+    }
+
     .about-info-grid {
         grid-template-columns: 1fr;
     }
@@ -1303,6 +1410,10 @@ ul { list-style: none; }
     .hero-cta { flex-direction: column; align-items: center; }
     .btn { width: 100%; justify-content: center; }
     .contact-cards { grid-template-columns: 1fr; }
+    .achievement-card {
+        flex-direction: column;
+        gap: 14px;
+    }
     .section { padding: 70px 0; }
     .about-cta { flex-direction: column; }
 }
