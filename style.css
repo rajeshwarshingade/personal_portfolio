@@ -1023,7 +1023,7 @@ ul { list-style: none; }
    CERTIFICATIONS SECTION
    ========================================== */
 .certifications {
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
 }
 
 .certification-group + .certification-group {
