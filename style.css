@@ -2,10 +2,10 @@
    CSS VARIABLES & RESET
    ========================================== */
 :root {
-    --bg-primary: #0a0a0f;
-    --bg-secondary: #111118;
-    --bg-card: #16161d;
-    --bg-card-hover: #1c1c25;
+    --bg-primary: #04091a;
+    --bg-secondary: #04091a;
+    --bg-card: #0a1228;
+    --bg-card-hover: #101a34;
     --text-primary: #e8e8ed;
     --text-secondary: #9a9ab0;
     --text-muted: #6b6b80;
@@ -14,7 +14,7 @@
     --accent-tertiary: #ff6b9d;
     --gradient-primary: linear-gradient(135deg, #6c63ff, #00d4aa);
     --gradient-accent: linear-gradient(135deg, #6c63ff, #ff6b9d);
-    --gradient-bg: linear-gradient(180deg, #0a0a0f 0%, #111118 100%);
+    --gradient-bg: linear-gradient(180deg, #04091a 0%, #04091a 100%);
     --border-color: rgba(108, 99, 255, 0.12);
     --border-hover: rgba(108, 99, 255, 0.3);
     --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
