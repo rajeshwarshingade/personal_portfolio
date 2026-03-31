@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OLA Analytics Dashboard</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+[data-theme="light"]{
+--bg:#EEEAF6;--bg2:#E3DEF0;--sidebar:#F5F2FB;
+--card:rgba(255,255,255,.65);--cardH:rgba(255,255,255,.85);--glass:rgba(255,255,255,.5);
+--bdr:rgba(120,80,210,.1);--bdr2:rgba(120,80,210,.2);
+--shd:0 4px 20px rgba(100,60,180,.08);--shd2:0 8px 32px rgba(100,60,180,.12);
+--pri:#7C3AED;--pri2:#6D28D9;--priB:rgba(124,58,237,.08);--priB2:rgba(124,58,237,.15);
+--tx:#1E1B4B;--tx2:#4C4680;--tx3:#9490B0;
+--grn:#10B981;--grnB:rgba(16,185,129,.1);--red:#EF4444;--redB:rgba(239,68,68,.1);
+--ylw:#F59E0B;--ylwB:rgba(245,158,11,.1);--blu:#3B82F6;--bluB:rgba(59,130,246,.1);
+--pnk:#EC4899;--orn:#F97316;--teal:#14B8A6;
+}
+[data-theme="dark"]{
+--bg:#13111C;--bg2:#1A1726;--sidebar:#1A1726;
+--card:rgba(30,26,50,.7);--cardH:rgba(40,34,65,.85);--glass:rgba(40,34,65,.5);
+--bdr:rgba(124,58,237,.15);--bdr2:rgba(124,58,237,.3);
+--shd:0 4px 20px rgba(0,0,0,.2);--shd2:0 8px 32px rgba(0,0,0,.3);
+--pri:#A78BFA;--pri2:#7C3AED;--priB:rgba(167,139,250,.1);--priB2:rgba(167,139,250,.18);
+--tx:#E8E4F0;--tx2:#B8B0D0;--tx3:#7A7298;
+--grn:#34D399;--grnB:rgba(52,211,153,.12);--red:#F87171;--redB:rgba(248,113,113,.12);
+--ylw:#FBBF24;--ylwB:rgba(251,191,36,.12);--blu:#60A5FA;--bluB:rgba(96,165,250,.12);
+--pnk:#F472B6;--orn:#FB923C;--teal:#2DD4BF;
+}
+body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;transition:background .3s,color .3s}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:5px}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:250px;background:var(--sidebar);backdrop-filter:blur(20px);border-right:1px solid var(--bdr);z-index:1000;display:flex;flex-direction:column;transition:all .3s}
+.sidebar.closed{transform:translateX(-100%)}
+.sb-brand{padding:18px 16px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px}
+
+/* Inline OLA Logo - No External Image */
+.ola-logo-wrap{width:42px;height:42px;position:relative;flex-shrink:0}
+.ola-logo-outer{width:42px;height:42px;background:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;border:3px solid #333;position:relative}
+.ola-logo-mid{width:28px;height:28px;background:#111;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #444}
+.ola-logo-dot{width:12px;height:12px;background:#CDDC39;border-radius:50%;box-shadow:0 0 6px rgba(205,220,57,.5)}
+.sb-title{font-size:22px;font-weight:800;color:var(--tx);letter-spacing:3px}
+.sb-sub{font-size:9px;color:var(--tx3);letter-spacing:2px;text-transform:uppercase}
+
+.sb-nav{flex:1;padding:8px;overflow-y:auto}
+.sb-lbl{font-size:9px;text-transform:uppercase;letter-spacing:2.5px;color:var(--tx3);padding:14px 12px 6px;font-weight:600}
+.nb{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;cursor:pointer;color:var(--tx2);font-size:13px;border:none;background:none;width:100%;text-align:left;transition:all .2s;font-weight:500;margin-bottom:2px;font-family:inherit}
+.nb:hover{background:var(--priB);color:var(--pri)}
+.nb.on{background:var(--pri);color:#fff;box-shadow:0 4px 16px rgba(124,58,237,.3)}
+.nb i{width:18px;text-align:center;font-size:14px}
+.nb .badge{margin-left:auto;background:rgba(255,255,255,.25);color:#fff;font-size:8px;padding:2px 7px;border-radius:10px;font-weight:700}
+
+.sb-bottom{padding:12px;border-top:1px solid var(--bdr)}
+.profile-mini{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;background:var(--priB);border:1px solid var(--bdr)}
+
+/* Profile Image - uses repo-relative path with CSS fallback */
+.pm-img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2.5px solid var(--pri);box-shadow:0 2px 8px rgba(124,58,237,.2);background:linear-gradient(135deg,var(--pri),var(--blu));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;overflow:hidden}
+.pm-img img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.pm-name{font-size:12px;font-weight:600;color:var(--tx)}.pm-role{font-size:10px;color:var(--tx3)}
+.pm-links{display:flex;gap:4px;margin-top:6px}
+.pm-link{width:28px;height:28px;border-radius:50%;background:var(--glass);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--tx2);text-decoration:none;font-size:11px;transition:all .2s}
+.pm-link:hover{background:var(--pri);color:#fff;border-color:var(--pri);transform:scale(1.1)}
+
+.main{margin-left:250px;min-height:100vh;display:flex;flex-direction:column;transition:margin .3s}
+.topbar{position:sticky;top:0;z-index:100;background:var(--glass);backdrop-filter:blur(16px);border-bottom:1px solid var(--bdr);padding:8px 22px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tb-l{display:flex;align-items:center;gap:10px}
+.ham{display:none;background:none;border:none;color:var(--tx);font-size:16px;cursor:pointer}
+.crumb{font-size:12px;color:var(--tx3)}.crumb b{color:var(--pri)}
+.tb-f{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.fsel{background:var(--card);border:1px solid var(--bdr);color:var(--tx);padding:6px 10px;border-radius:10px;font-size:11px;cursor:pointer;outline:none;font-family:inherit;transition:all .2s}
+.fsel:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--priB)}
+.fdate{background:var(--card);border:1px solid var(--bdr);color:var(--tx);padding:5px 8px;border-radius:10px;font-size:11px;outline:none;font-family:inherit}
+.fdate:focus{border-color:var(--pri)}
+.tb-r{display:flex;align-items:center;gap:5px}
+.btn{height:32px;padding:0 14px;border-radius:10px;border:1px solid var(--bdr);background:var(--card);color:var(--tx2);display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;transition:all .2s;font-family:inherit;font-weight:500;white-space:nowrap;text-decoration:none}
+.btn:hover{background:var(--priB);color:var(--pri);border-color:var(--bdr2);transform:translateY(-1px)}
+.btn.fill{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 4px 12px rgba(124,58,237,.2)}
+.btn.fill:hover{background:var(--pri2)}
+.btn.sm{height:28px;padding:0 10px;font-size:10px;border-radius:8px}
+.btn.loading i.fa-sync-alt{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.live{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--grn);padding:4px 10px;background:var(--grnB);border-radius:14px;font-weight:600}
+.live-dot{width:6px;height:6px;background:var(--grn);border-radius:50%;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.theme-toggle{position:relative;width:52px;height:28px;background:var(--bdr2);border-radius:14px;cursor:pointer;border:none;transition:all .3s}
+.theme-toggle::after{content:'';position:absolute;width:22px;height:22px;background:#fff;border-radius:50%;top:3px;left:3px;transition:all .3s;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.theme-toggle.dark{background:var(--pri)}
+.theme-toggle.dark::after{left:27px}
+.theme-toggle i{position:absolute;top:50%;transform:translateY(-50%);font-size:11px}
+.theme-toggle .fa-sun{left:7px;color:var(--ylw)}
+.theme-toggle .fa-moon{right:7px;color:#fff}
+.content{flex:1;padding:18px 22px}
+.pg-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.pg-h i{font-size:20px;color:var(--pri)}.pg-h h1{font-size:20px;font-weight:700}
+.pg-sub{font-size:12px;color:var(--tx3);margin-bottom:14px}
+.sf{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:14px;padding:8px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;box-shadow:var(--shd)}
+.sf .lbl{font-size:9px;color:var(--tx3);text-transform:uppercase;letter-spacing:1.5px;font-weight:600;margin-right:4px}
+.pill{padding:6px 14px;border-radius:20px;border:1px solid var(--bdr);background:var(--glass);color:var(--tx2);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:500}
+.pill:hover{background:var(--priB);color:var(--pri)}
+.pill.on{background:var(--pri);color:#fff;border-color:var(--pri);box-shadow:0 3px 12px rgba(124,58,237,.25)}
+.pan{display:none}.pan.on{display:block;animation:fu .3s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.kg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:16px;padding:16px;transition:all .2s;box-shadow:var(--shd)}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shd2);background:var(--cardH)}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.ki{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ki.p{background:var(--priB);color:var(--pri)}.ki.g{background:var(--grnB);color:var(--grn)}
+.ki.r{background:var(--redB);color:var(--red)}.ki.y{background:var(--ylwB);color:var(--ylw)}
+.ki.b{background:var(--bluB);color:var(--blu)}.ki.pk{background:rgba(236,72,153,.1);color:var(--pnk)}
+.kc{font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px}
+.kc.u{background:var(--grnB);color:var(--grn)}.kc.d{background:var(--redB);color:var(--red)}
+.kv{font-size:22px;font-weight:800;margin-bottom:2px}.kl{font-size:11px;color:var(--tx3)}
+.kb{margin-top:8px;height:4px;background:var(--bdr);border-radius:4px;overflow:hidden}
+.kf{height:100%;border-radius:4px;transition:width .8s}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.s2{grid-column:span 2}
+.cd{background:var(--card);backdrop-filter:blur(10px);border:1px solid var(--bdr);border-radius:16px;padding:16px;transition:all .2s;box-shadow:var(--shd)}
+.cd:hover{box-shadow:var(--shd2)}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:6px}
+.ct{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}.ct i{font-size:13px;color:var(--pri)}
+.cw{position:relative;height:250px}.cw.s{height:190px}.cw.l{height:300px}
+.ins{margin-top:10px;padding:10px 12px;background:var(--priB);border:1px solid var(--bdr);border-radius:10px;display:flex;gap:8px;font-size:11px;color:var(--tx2);line-height:1.6}
+.ins i{color:var(--ylw);flex-shrink:0;margin-top:1px}.ins strong{color:var(--tx)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{text-align:left;padding:7px 10px;font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--tx3);border-bottom:1px solid var(--bdr);font-weight:600}
+.tbl td{padding:7px 10px;font-size:12px;border-bottom:1px solid var(--bdr);color:var(--tx2)}
+.tbl tr:hover td{background:var(--priB)}
+.stars{color:var(--ylw);font-size:11px}
+.prog{display:flex;align-items:center;gap:5px}.prog-t{flex:1;height:4px;background:var(--bdr);border-radius:4px;overflow:hidden}.prog-f{height:100%;border-radius:4px}
+.rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.rc{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:14px;box-shadow:var(--shd);transition:all .2s}
+.rc:hover{transform:translateY(-2px);box-shadow:var(--shd2)}
+.ri{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;margin-bottom:8px}
+.ri.ig{background:var(--grnB);color:var(--grn)}.ri.ir{background:var(--redB);color:var(--red)}.ri.ip{background:var(--priB);color:var(--pri)}.ri.iy{background:var(--ylwB);color:var(--ylw)}
+.rc h4{font-size:13px;margin-bottom:3px}.rc p{font-size:11px;color:var(--tx2);line-height:1.5}
+.rtag{display:inline-block;margin-top:5px;padding:2px 9px;border-radius:12px;font-size:9px;font-weight:600}
+.rtag.h{background:var(--redB);color:var(--red)}.rtag.m{background:var(--ylwB);color:var(--ylw)}
+.sr{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--bdr);font-size:12px;color:var(--tx2);gap:8px}
+.sr:last-child{border-bottom:none}
+.lg{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.lp{padding:4px 10px;background:var(--glass);border:1px solid var(--bdr);border-radius:14px;font-size:10px;color:var(--tx2);display:flex;align-items:center;gap:4px;cursor:pointer;transition:all .2s;font-weight:500}
+.lp:hover,.lp.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.lc{background:var(--pri);color:#fff;padding:1px 5px;border-radius:6px;font-size:8px;font-weight:700}
+.lp.on .lc{background:rgba(255,255,255,.3)}
+.mb{height:250px;border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(135deg,var(--bg2),var(--bg))}
+.mi{position:absolute;inset:0;background-image:linear-gradient(var(--bdr) 1px,transparent 1px),linear-gradient(90deg,var(--bdr) 1px,transparent 1px);background-size:22px 22px}
+.mp{position:absolute;width:7px;height:7px;border-radius:50%;animation:mpp 2s infinite}
+.mp::after{content:'';position:absolute;inset:-3px;border-radius:50%;border:1.5px solid currentColor;opacity:.3}
+@keyframes mpp{0%,100%{transform:scale(1);opacity:.8}50%{transform:scale(1.3);opacity:1}}
+
+/* Profile Card */
+.pcard{background:var(--card);backdrop-filter:blur(16px);border:1px solid var(--bdr);border-radius:24px;padding:32px;text-align:center;box-shadow:var(--shd2);max-width:340px;margin:20px auto 0}
+.pcard-img-wrap{width:100px;height:100px;border-radius:50%;margin:0 auto 14px;border:4px solid var(--pri);box-shadow:0 6px 24px rgba(124,58,237,.25);overflow:hidden;background:linear-gradient(135deg,var(--pri),var(--blu));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:28px}
+.pcard-img-wrap img{width:100%;height:100%;object-fit:cover}
+.pcard-role{font-size:11px;color:var(--tx3);text-transform:uppercase;letter-spacing:2.5px;font-weight:600}
+.pcard-name{font-size:22px;font-weight:800;color:var(--tx);margin:4px 0 8px}
+.pcard-desc{font-size:12px;color:var(--tx2);line-height:1.7;margin-bottom:16px}
+.pcard-links{display:flex;gap:10px;justify-content:center}
+.pcl{width:44px;height:44px;border-radius:50%;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--tx2);text-decoration:none;font-size:18px;transition:all .25s;box-shadow:var(--shd)}
+.pcl:hover{background:var(--pri);color:#fff;border-color:var(--pri);transform:translateY(-4px);box-shadow:0 8px 20px rgba(124,58,237,.3)}
+
+.dsp{max-height:260px;overflow:auto;border:1px solid var(--bdr);border-radius:12px;margin-top:8px}
+.dsp table{width:100%;border-collapse:collapse;font-size:10px}
+.dsp th{position:sticky;top:0;background:var(--bg2);padding:5px 7px;text-align:left;font-size:9px;color:var(--tx3);border-bottom:1px solid var(--bdr)}
+.dsp td{padding:4px 7px;border-bottom:1px solid var(--bdr);color:var(--tx2);white-space:nowrap}
+.disclaimer{padding:10px 22px;text-align:center;border-top:1px solid var(--bdr);background:var(--glass)}
+.disclaimer p{font-size:9px;color:var(--tx3);line-height:1.5}.disclaimer strong{color:var(--pri)}
+.overlay{display:none;position:fixed;inset:0;background:rgba(30,27,75,.2);backdrop-filter:blur(3px);z-index:999}.overlay.show{display:block}
+.modal{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--sidebar);backdrop-filter:blur(20px);border:1px solid var(--bdr);border-radius:20px;padding:24px;z-index:1001;width:400px;max-width:92vw;box-shadow:var(--shd2)}
+.modal.show{display:block}
+.modal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.modal-h h3{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}.modal-h h3 i{color:var(--pri)}
+.modal-x{background:none;border:none;color:var(--tx3);font-size:18px;cursor:pointer}
+.eb{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid var(--bdr);background:var(--card);color:var(--tx);cursor:pointer;transition:all .2s;font-family:inherit;font-size:13px;width:100%;text-align:left;margin-bottom:6px}
+.eb:hover{border-color:var(--pri);background:var(--priB);transform:translateX(4px)}
+.eb i{font-size:18px;color:var(--pri);width:22px;text-align:center}
+.eb .es{font-size:10px;color:var(--tx3);margin-top:1px}
+.toast-c{position:fixed;bottom:18px;right:18px;z-index:10000;display:flex;flex-direction:column;gap:5px}
+.toast{background:var(--cardH);backdrop-filter:blur(14px);border:1px solid var(--bdr);color:var(--tx);padding:9px 16px;border-radius:12px;font-size:12px;box-shadow:var(--shd2);display:flex;align-items:center;gap:7px;animation:ti .3s ease,to .3s ease 2.7s forwards;font-weight:500}
+.toast i{flex-shrink:0}.toast.ok i{color:var(--grn)}.toast.info i{color:var(--pri)}
+@keyframes ti{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes to{from{opacity:1}to{opacity:0;transform:translateY(6px)}}
+@media(max-width:1024px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main{margin-left:0}.ham{display:block}.g2{grid-template-columns:1fr}.s2{grid-column:span 1}.tb-f{display:none}}
+@media(max-width:640px){.kg{grid-template-columns:1fr 1fr}.content{padding:12px}}
+</style>
+</head>
+<body>
+<div class="overlay" id="ov" onclick="toggleSB()"></div>
+<div class="overlay" id="eov" onclick="closeE()"></div>
+<div class="modal" id="emod">
+<div class="modal-h"><h3><i class="fas fa-arrow-up-from-bracket"></i>Export</h3><button class="modal-x" onclick="closeE()"><i class="fas fa-xmark"></i></button></div>
+<button class="eb" onclick="xCSV()"><i class="fas fa-file-csv"></i><div><b>CSV Report</b><div class="es">Summary with KPIs</div></div></button>
+<button class="eb" onclick="xPDF()"><i class="fas fa-file-pdf"></i><div><b>PDF Report</b><div class="es">Visual analytics report</div></div></button>
+<button class="eb" onclick="xPPT()"><i class="fas fa-file-powerpoint"></i><div><b>Presentation</b><div class="es">Key findings slides</div></div></button>
+<button class="eb" onclick="xDS()"><i class="fas fa-database"></i><div><b>Full Dataset</b><div class="es">50K rows × 19 columns</div></div></button>
+</div>
+
+<aside class="sidebar" id="sb">
+<div class="sb-brand">
+<!-- INLINE OLA LOGO - No external image needed -->
+<div class="ola-logo-wrap">
+<div class="ola-logo-outer"><div class="ola-logo-mid"><div class="ola-logo-dot"></div></div></div>
+</div>
+<div><div class="sb-title">OLA</div><div class="sb-sub">Analytics Dashboard</div></div>
+</div>
+<nav class="sb-nav">
+<div class="sb-lbl">Dashboard</div>
+<button class="nb on" onclick="go('overall',this)"><i class="fas fa-gauge-high"></i>Overall<span class="badge">LIVE</span></button>
+<button class="nb" onclick="go('vehicle',this)"><i class="fas fa-car-side"></i>Vehicle Type</button>
+<button class="nb" onclick="go('revenue',this)"><i class="fas fa-indian-rupee-sign"></i>Revenue</button>
+<button class="nb" onclick="go('cancel',this)"><i class="fas fa-ban"></i>Cancellation</button>
+<button class="nb" onclick="go('ratings',this)"><i class="fas fa-star-half-stroke"></i>Ratings</button>
+<div class="sb-lbl">Analysis</div>
+<button class="nb" onclick="go('insights',this)"><i class="fas fa-lightbulb"></i>Insights</button>
+<button class="nb" onclick="go('locations',this)"><i class="fas fa-location-dot"></i>Locations</button>
+<button class="nb" onclick="go('data',this)"><i class="fas fa-database"></i>Dataset</button>
+</nav>
+<div class="sb-bottom">
+<div class="profile-mini">
+<!-- PROFILE IMAGE: Uses local file. Put profile.jpg in same folder as this HTML -->
+<div class="pm-img"><img src="./profile.jpg" alt="RS" onerror="this.style.display='none';this.parentElement.textContent='RS'"></div>
+<div><div class="pm-name">Rajeshwar Shingade</div><div class="pm-role">Data Analyst</div>
+<div class="pm-links">
+<a href="https://github.com/rajeshwarshingade" target="_blank" class="pm-link" title="GitHub"><i class="fab fa-github"></i></a>
+<a href="https://www.linkedin.com/in/rajeshwarshingade" target="_blank" class="pm-link" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+<a href="https://rajeshwarshingade.me" target="_blank" class="pm-link" title="Portfolio"><i class="fas fa-globe"></i></a>
+</div></div>
+</div>
+</div>
+</aside>
+
+<div class="main">
+<header class="topbar">
+<div class="tb-l"><button class="ham" onclick="toggleSB()"><i class="fas fa-bars"></i></button><div class="crumb">Dashboard / <b id="crumb">Overall</b></div></div>
+<div class="tb-f">
+<select class="fsel" id="fV" onchange="applyF()"><option value="all">All Vehicles</option><option>Auto</option><option>Mini</option><option>Prime Sedan</option><option>Prime Plus</option><option>Prime SUV</option><option>Bike</option><option>eBike</option></select>
+<select class="fsel" id="fW" onchange="applyF()"><option value="all">Full Month</option><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option></select>
+<input type="date" class="fdate" id="fD1" value="2024-07-01" min="2024-07-01" max="2024-07-31" onchange="applyF()">
+<input type="date" class="fdate" id="fD2" value="2024-07-31" min="2024-07-01" max="2024-07-31" onchange="applyF()">
+</div>
+<div class="tb-r">
+<div class="live"><div class="live-dot"></div>Live</div>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()"><i class="fas fa-sun"></i><i class="fas fa-moon"></i></button>
+<button class="btn" id="btnR" onclick="doRefresh()"><i class="fas fa-sync-alt"></i></button>
+<button class="btn fill" onclick="openE()"><i class="fas fa-arrow-up-from-bracket"></i>Export</button>
+</div>
+</header>
+
+<div class="content">
+<div class="pan on" id="p-overall">
+<div class="pg-h"><i class="fas fa-gauge-high"></i><h1>Overall Dashboard</h1></div>
+<p class="pg-sub" id="fInfo">All vehicles · July 2024 · Bengaluru</p>
+<div class="sf"><span class="lbl"><i class="fas fa-sliders"></i> Status</span>
+<button class="pill on" onclick="sF('st','all',this)">All</button><button class="pill" onclick="sF('st','success',this)">Successful</button><button class="pill" onclick="sF('st','cancel',this)">Cancelled</button><button class="pill" onclick="sF('st','inc',this)">Incomplete</button></div>
+<div class="kg" id="kO"></div>
+<div class="g2">
+<div class="cd s2"><div class="ch"><div><div class="ct"><i class="fas fa-chart-line"></i>Ride Volume</div></div></div><div class="cw l"><canvas id="c1"></canvas></div><div class="ins"><i class="fas fa-lightbulb"></i><span><strong>Insight:</strong> Weekends <strong>23% higher</strong>. Peak: Jul 20 with 2,100+ bookings.</span></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-chart-pie"></i>Status Breakdown</div></div></div><div class="cw"><canvas id="c2"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-clock"></i>Hourly Demand</div></div></div><div class="cw"><canvas id="c3"></canvas></div></div>
+</div></div>
+
+<div class="pan" id="p-vehicle">
+<div class="pg-h"><i class="fas fa-car-side"></i><h1>Vehicle Type</h1></div><p class="pg-sub">Category performance</p>
+<div class="sf"><span class="lbl"><i class="fas fa-sliders"></i> View</span><button class="pill on" onclick="sF('vc','all',this)">All</button><button class="pill" onclick="sF('vc','4w',this)">4-Wheeler</button><button class="pill" onclick="sF('vc','2w',this)">2-Wheeler</button><button class="pill" onclick="sF('vc','prem',this)">Premium</button></div>
+<div class="kg" id="kV"></div>
+<div class="g2">
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-road"></i>Avg Distance</div></div></div><div class="cw"><canvas id="c4"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-chart-bar"></i>Bookings</div></div></div><div class="cw"><canvas id="c5"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-coins"></i>Revenue</div></div></div><div class="cw"><canvas id="c6"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-bullseye"></i>Radar</div></div></div><div class="cw"><canvas id="c7"></canvas></div></div>
+</div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-table-cells"></i>Summary</div></div></div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Vehicle</th><th>Rides</th><th>Dist</th><th>Fare</th><th>Success</th><th>Rating</th></tr></thead><tbody id="tV"></tbody></table></div></div>
+</div>
+
+<div class="pan" id="p-revenue">
+<div class="pg-h"><i class="fas fa-indian-rupee-sign"></i><h1>Revenue</h1></div><p class="pg-sub">Financial analytics</p>
+<div class="sf"><span class="lbl"><i class="fas fa-sliders"></i> Range</span><button class="pill on" onclick="sF('rv','all',this)">All</button><button class="pill" onclick="sF('rv','u5',this)">&lt;₹500</button><button class="pill" onclick="sF('rv','5k',this)">₹500-1K</button><button class="pill" onclick="sF('rv','1k',this)">&gt;₹1K</button></div>
+<div class="kg" id="kR"></div>
+<div class="g2">
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-credit-card"></i>Payment</div></div></div><div class="cw"><canvas id="c8"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-chart-area"></i>Daily Revenue</div></div></div><div class="cw"><canvas id="c9"></canvas></div></div>
+</div></div>
+
+<div class="pan" id="p-cancel">
+<div class="pg-h"><i class="fas fa-ban"></i><h1>Cancellation</h1></div><p class="pg-sub">Cancel patterns</p>
+<div class="sf"><span class="lbl"><i class="fas fa-sliders"></i> Type</span><button class="pill on" onclick="sF('cf','all',this)">All</button><button class="pill" onclick="sF('cf','cust',this)">Customer</button><button class="pill" onclick="sF('cf','drv',this)">Driver</button></div>
+<div class="kg" id="kC"></div>
+<div class="g2">
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-user-xmark"></i>Customer Reasons</div></div></div><div class="cw"><canvas id="c10"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-id-card"></i>Driver Reasons</div></div></div><div class="cw"><canvas id="c11"></canvas></div></div>
+</div></div>
+
+<div class="pan" id="p-ratings">
+<div class="pg-h"><i class="fas fa-star-half-stroke"></i><h1>Ratings</h1></div><p class="pg-sub">Satisfaction metrics</p>
+<div class="kg" id="kRt"></div>
+<div class="g2">
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-ranking-star"></i>By Vehicle</div></div></div><div class="cw"><canvas id="c12"></canvas></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-chart-bar"></i>Distribution</div></div></div><div class="cw"><canvas id="c13"></canvas></div></div>
+</div></div>
+
+<div class="pan" id="p-insights">
+<div class="pg-h"><i class="fas fa-lightbulb"></i><h1>Business Insights</h1></div><p class="pg-sub">Growth strategies</p>
+<div class="g2">
+<div class="cd"><div class="ch"><div class="ct" style="color:var(--grn)"><i class="fas fa-arrow-trend-up" style="color:var(--grn)"></i>IMPROVE</div></div>
+<div class="sr"><i class="fas fa-check" style="color:var(--grn)"></i>Increase driver availability at peaks</div>
+<div class="sr"><i class="fas fa-check" style="color:var(--grn)"></i>Expand Prime SUV — ₹580 avg/ride</div>
+<div class="sr"><i class="fas fa-check" style="color:var(--grn)"></i>Weekend surge pricing — 23% demand</div>
+<div class="sr"><i class="fas fa-check" style="color:var(--grn)"></i>UPI incentives — 38% revenue</div>
+<div class="sr"><i class="fas fa-check" style="color:var(--grn)"></i>Loyalty for top 5% customers</div></div>
+<div class="cd"><div class="ch"><div class="ct" style="color:var(--red)"><i class="fas fa-arrow-trend-down" style="color:var(--red)"></i>REDUCE</div></div>
+<div class="sr"><i class="fas fa-xmark" style="color:var(--red)"></i>27.8% cancellations → target 20%</div>
+<div class="sr"><i class="fas fa-xmark" style="color:var(--red)"></i>"Driver not moving" — tracking alerts</div>
+<div class="sr"><i class="fas fa-xmark" style="color:var(--red)"></i>₹31L revenue lost from cancels</div>
+<div class="sr"><i class="fas fa-xmark" style="color:var(--red)"></i>5.8% incomplete — health checks</div>
+<div class="sr"><i class="fas fa-xmark" style="color:var(--red)"></i>8.2% ≤2★ — quality audits</div></div>
+</div>
+<div class="cd" style="margin-top:12px"><div class="ch"><div><div class="ct"><i class="fas fa-rocket"></i>Revenue Projection</div></div></div><div class="cw l"><canvas id="c14"></canvas></div></div>
+<div class="rg" style="margin-top:12px">
+<div class="rc"><div class="ri ig"><i class="fas fa-chart-line"></i></div><h4>Dynamic Pricing</h4><p>Peak surge = 15% premium.</p><span class="rtag h">+₹16.8L/mo</span></div>
+<div class="rc"><div class="ri ir"><i class="fas fa-user-shield"></i></div><h4>Cut Cancels</h4><p>Penalty + backup pool.</p><span class="rtag h">+₹19.5L/mo</span></div>
+<div class="rc"><div class="ri ip"><i class="fas fa-map-location-dot"></i></div><h4>Smart Positioning</h4><p>ML: "Not Found" 8%→3%.</p><span class="rtag m">+₹8.2L/mo</span></div>
+<div class="rc"><div class="ri iy"><i class="fas fa-users"></i></div><h4>Loyalty</h4><p>Top 5% = 22% rev.</p><span class="rtag m">+₹5.4L/mo</span></div>
+</div></div>
+
+<div class="pan" id="p-locations">
+<div class="pg-h"><i class="fas fa-location-dot"></i><h1>Locations</h1></div><p class="pg-sub" id="locI">All zones · Bengaluru</p>
+<div class="sf"><span class="lbl"><i class="fas fa-sliders"></i> Zone</span>
+<button class="pill on" onclick="sF('lz','all',this)">All</button><button class="pill" onclick="sF('lz','north',this)">North</button><button class="pill" onclick="sF('lz','south',this)">South</button><button class="pill" onclick="sF('lz','east',this)">East</button><button class="pill" onclick="sF('lz','west',this)">West</button><button class="pill" onclick="sF('lz','central',this)">Central</button></div>
+<div class="kg" id="kL"></div>
+<div class="g2">
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-map"></i>Heatmap</div></div></div>
+<div class="mb"><div class="mi"></div>
+<div class="mp" style="top:18%;left:28%;background:var(--red);color:var(--red);width:11px;height:11px"></div>
+<div class="mp" style="top:32%;left:52%;background:var(--pri);color:var(--pri);width:10px;height:10px"></div>
+<div class="mp" style="top:48%;left:38%;background:var(--ylw);color:var(--ylw)"></div>
+<div class="mp" style="top:23%;left:68%;background:var(--grn);color:var(--grn)"></div>
+<div class="mp" style="top:42%;left:62%;background:var(--red);color:var(--red)"></div>
+<div class="mp" style="top:68%;left:48%;background:var(--grn);color:var(--grn);width:9px;height:9px"></div>
+<div class="mp" style="top:28%;left:42%;background:var(--pri);color:var(--pri)"></div>
+</div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-chart-bar"></i>Top Locations</div></div></div><div class="cw l"><canvas id="c15"></canvas></div></div>
+</div>
+<div class="cd" style="margin-top:12px"><div class="ch"><div><div class="ct"><i class="fas fa-grip"></i>Click to filter</div></div></div><div class="lg" id="locG"></div></div>
+</div>
+
+<div class="pan" id="p-data">
+<div class="pg-h"><i class="fas fa-database"></i><h1>Dataset & Resources</h1></div><p class="pg-sub">50,000 rows × 19 columns</p>
+<div class="kg"><div class="kpi"><div class="kpi-top"><div class="ki p"><i class="fas fa-table"></i></div></div><div class="kv">50,000</div><div class="kl">Rows</div></div><div class="kpi"><div class="kpi-top"><div class="ki b"><i class="fas fa-columns"></i></div></div><div class="kv">19</div><div class="kl">Columns</div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-calendar"></i></div></div><div class="kv">31</div><div class="kl">Days</div></div><div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-city"></i></div></div><div class="kv">50</div><div class="kl">Locations</div></div></div>
+<div class="cd"><div class="ch"><div><div class="ct"><i class="fas fa-eye"></i>Preview</div></div><button class="btn sm fill" onclick="xDS()"><i class="fas fa-download"></i>Full 50K</button></div><div class="dsp" id="dsP"></div></div>
+
+<!-- PROFILE CARD - Uses local image -->
+<div class="pcard">
+<div class="pcard-img-wrap"><img src="./profile.jpg" alt="Rajeshwar" onerror="this.style.display='none';this.parentElement.textContent='RS'"></div>
+<div class="pcard-role">DATA ANALYST</div>
+<div class="pcard-name">Rajeshwar Shingade</div>
+<div class="pcard-desc">Dashboard design, data visualization, analysis & business intelligence. Transforming raw data into actionable insights.</div>
+<div class="pcard-links">
+<a href="https://github.com/rajeshwarshingade" target="_blank" class="pcl" title="GitHub"><i class="fab fa-github"></i></a>
+<a href="https://www.linkedin.com/in/rajeshwarshingade" target="_blank" class="pcl" title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+<a href="https://rajeshwarshingade.me" target="_blank" class="pcl" title="Website"><i class="fas fa-globe"></i></a>
+</div>
+</div>
+</div>
+</div>
+
+<div class="disclaimer">
+<p><i class="fas fa-shield-halved" style="color:var(--pri)"></i> <strong>Disclaimer:</strong> This dashboard uses an AI-generated synthetic dataset for data analysis practice and dashboard design demonstration only. No connection to real-world entities. All data and insights are simulated. | Dashboard by <strong>Rajeshwar Shingade</strong></p>
+</div>
+</div>
+
+<div class="toast-c" id="toasts"></div>
+
+<script>
+const V={'Auto':{r:7200,d:6.21,f:145,s:65,rt:3.8,rv:1044000},'Mini':{r:8500,d:15.72,f:285,s:63,rt:4.0,rv:2422500},'Prime Sedan':{r:7800,d:15.27,f:420,s:61,rt:4.1,rv:3276000},'Prime Plus':{r:6200,d:14.87,f:480,s:60,rt:4.2,rv:2976000},'Prime SUV':{r:5500,d:15.19,f:580,s:59,rt:4.3,rv:3190000},'Bike':{r:8300,d:16.16,f:95,s:66,rt:3.9,rv:788500},'eBike':{r:6500,d:15.68,f:80,s:64,rt:3.85,rv:520000}};
+const PAY={'UPI':{r:4256000},'Cash':{r:2912000},'Credit Card':{r:2240000},'Debit Card':{r:1120000},'Wallet':{r:672000}};
+const CCR={'Driver not moving':32,'Change of plans':25,'Asked cancel':22,'AC issue':12,'Wrong address':9};
+const DCR={'Personal & Car':38,'Customer issue':28,'Sick customer':20,'Too many people':14};
+const ZN={north:['Hebbal','Yelahanka','RT Nagar','Hennur','Thanisandra','Nagawara','Jakkur','Vidyaranyapura','Sahakara Nagar','Yeshwanthpur'],south:['JP Nagar','Banashankari','Basavanagudi','Jayanagar','BTM Layout','Bannerghatta Rd','Electronic City','HSR Layout','Bellandur','Sarjapur Rd'],east:['Whitefield','Marathahalli','KR Puram','HAL','CV Raman Nagar','Old Airport Rd','Ramamurthy Nagar','Kalyan Nagar','HBR Layout','Banaswadi'],west:['Rajajinagar','Malleshwaram','Vijayanagar','Peenya','Majestic'],central:['Koramangala','Indiranagar','MG Road','Brigade Road','Silk Board','Domlur','Ulsoor','Richmond Rd','Cunningham Rd','Sadashivanagar','KR Market','Shivajinagar','Frazer Town','Cox Town','Kammanahalli']};
+const AA=[].concat(...Object.values(ZN));const LD={};AA.forEach((a,i)=>LD[a]=Math.round(1200-i*10+(Math.sin(i*31)*1e4%1)*400));
+const H=[320,180,120,90,150,380,820,1650,2100,1950,1800,1650,1520,1480,1420,1550,1780,2200,2450,2300,2050,1680,1200,680];
+function sr(s){let x=Math.sin(s)*1e4;return x-Math.floor(x)}
+function genD(){const d=[];for(let i=1;i<=31;i++){const dt=new Date(2024,6,i),w=dt.getDay()===0||dt.getDay()===6,b=Math.round((w?1850:1520)+(sr(i*17+3)-.5)*300);d.push({dy:i,lb:'Jul '+i,w,b,s:Math.round(b*(.6+sr(i*13)*.04)),r:0,ds:Math.round((12+sr(i*23)*4)*10)/10});d[i-1].r=Math.round(d[i-1].s*(320+sr(i*7)*80))}return d}
+let DL=genD();
+let F={v:'all',wk:'all',d1:1,d2:31,st:'all',vc:'all',rv:'all',cf:'all',lz:'all',loc:null};
+const CL={p:'#7C3AED',b:'#3B82F6',g:'#10B981',r:'#EF4444',y:'#F59E0B',pk:'#EC4899',o:'#F97316',t:'#14B8A6'};const C7=[CL.p,CL.b,CL.g,CL.pk,CL.r,CL.y,CL.t];
+Chart.defaults.font.family="'Segoe UI',sans-serif";let CH={};
+function dc(k){if(CH[k]){CH[k].destroy();delete CH[k]}}
+function updCC(){Chart.defaults.color=getComputedStyle(document.documentElement).getPropertyValue('--tx3').trim();Chart.defaults.borderColor=getComputedStyle(document.documentElement).getPropertyValue('--bdr').trim()}
+function grd(x,c,h=250){const g=x.createLinearGradient(0,0,0,h);g.addColorStop(0,c+'40');g.addColorStop(1,c+'05');return g}
+function fmt(n){if(n>=1e7)return'₹'+(n/1e7).toFixed(2)+'Cr';if(n>=1e5)return'₹'+(n/1e5).toFixed(1)+'L';if(n>=1e3)return'₹'+(n/1e3).toFixed(1)+'K';return'₹'+n}
+const co=o=>({responsive:true,maintainAspectRatio:false,...o});
+function gFD(){let d=DL.filter(x=>x.dy>=F.d1&&x.dy<=F.d2);if(F.wk!=='all'){const r=[[1,7],[8,14],[15,21],[22,31]][F.wk-1];d=d.filter(x=>x.dy>=r[0]&&x.dy<=r[1])}return d}
+function gS(){const fd=gFD(),rt=fd.length/31;let tb,sc,rv,ds,cr,ar;if(F.v==='all'){tb=Math.round(50000*rt);sc=Math.round(31000*rt);rv=Math.round(11200000*rt);ds=13.8;cr=27.8;ar=4.02}else{const v=V[F.v];tb=Math.round(v.r*rt);sc=Math.round(v.r*(v.s/100)*rt);rv=Math.round(v.rv*rt);ds=v.d;cr=Math.round((100-v.s)*10)/10;ar=v.rt}if(F.st==='success'){tb=sc;cr=0}else if(F.st==='cancel'){tb=Math.round(tb*.242);sc=0;cr=100}else if(F.st==='inc'){tb=Math.round(tb*.058);sc=0}return{tb,sc,rv,ds,cr,ar,n:fd.length,cc:Math.round(tb*.068),dc:Math.round(tb*.174),ic:Math.round(tb*.058),nf:Math.round(tb*.08),af:sc>0?Math.round(rv/sc):0}}
+function applyF(){F.v=document.getElementById('fV').value;F.wk=document.getElementById('fW').value;const d1=document.getElementById('fD1').value,d2=document.getElementById('fD2').value;F.d1=d1?+d1.split('-')[2]:1;F.d2=d2?+d2.split('-')[2]:31;updInfo();buildCur();toast('info','fa-filter','Filters applied')}
+function sF(k,v,el){F[k]=v;if(el){el.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('on'));el.classList.add('on')}buildCur();toast('info','fa-sliders',v)}
+function updInfo(){const p=[];if(F.v!=='all')p.push(F.v);if(F.wk!=='all')p.push('Wk'+F.wk);if(F.d1!==1||F.d2!==31)p.push('Jul '+F.d1+'-'+F.d2);document.getElementById('fInfo').textContent=p.length?p.join(' · ')+' · Bengaluru':'All vehicles · July 2024 · Bengaluru'}
+function buildCur(){const id=document.querySelector('.pan.on')?.id.replace('p-','');({overall:bO,vehicle:bV,revenue:bR,cancel:bC,ratings:bRt,insights:bI,locations:bL,data:bD}[id]||bO)();setTimeout(()=>Object.values(CH).forEach(c=>c?.resize?.()),50)}
+function bO(){const s=gS(),fd=gFD();document.getElementById('kO').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki p"><i class="fas fa-receipt"></i></div><span class="kc u"><i class="fas fa-arrow-up"></i> 12%</span></div><div class="kv">${s.tb.toLocaleString()}</div><div class="kl">Total Bookings</div><div class="kb"><div class="kf" style="width:100%;background:${CL.p}"></div></div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-circle-check"></i></div><span class="kc u"><i class="fas fa-arrow-up"></i> 3%</span></div><div class="kv">${s.sc.toLocaleString()}</div><div class="kl">Successful</div><div class="kb"><div class="kf" style="width:62%;background:${CL.g}"></div></div></div><div class="kpi"><div class="kpi-top"><div class="ki b"><i class="fas fa-indian-rupee-sign"></i></div></div><div class="kv">${fmt(s.rv)}</div><div class="kl">Revenue</div><div class="kb"><div class="kf" style="width:75%;background:${CL.b}"></div></div></div><div class="kpi"><div class="kpi-top"><div class="ki r"><i class="fas fa-circle-xmark"></i></div><span class="kc d"><i class="fas fa-arrow-down"></i> 2%</span></div><div class="kv">${s.cr}%</div><div class="kl">Cancel Rate</div><div class="kb"><div class="kf" style="width:${s.cr}%;background:${CL.r}"></div></div></div><div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-road"></i></div></div><div class="kv">${s.ds}km</div><div class="kl">Avg Distance</div></div><div class="kpi"><div class="kpi-top"><div class="ki pk"><i class="fas fa-star"></i></div></div><div class="kv">${s.ar}</div><div class="kl">Avg Rating</div></div>`;dc('c1');const x=document.getElementById('c1').getContext('2d');CH.c1=new Chart(x,{type:'line',data:{labels:fd.map(d=>d.lb),datasets:[{label:'Bookings',data:fd.map(d=>F.st==='success'?d.s:F.st==='cancel'?Math.round(d.b*.242):d.b),borderColor:CL.p,backgroundColor:grd(x,CL.p,300),fill:true,tension:.4,borderWidth:2.5,pointRadius:fd.length>15?2:4},{label:'Successful',data:fd.map(d=>d.s),borderColor:CL.g,tension:.4,borderWidth:1.5,borderDash:[5,5],pointRadius:1}]},options:co({interaction:{intersect:false,mode:'index'},plugins:{legend:{position:'top',labels:{usePointStyle:true,padding:12}}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}})});dc('c2');CH.c2=new Chart(document.getElementById('c2'),{type:'doughnut',data:{labels:['Success','Driver','Customer','Not Found','Incomplete'],datasets:[{data:[s.sc,s.dc,s.cc,s.nf,s.ic],backgroundColor:[CL.g,CL.r,CL.y,CL.b,CL.o],borderWidth:0}]},options:co({cutout:'62%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:8,font:{size:10}}}}})});dc('c3');const hd=F.v==='all'?H:H.map(h=>Math.round(h*(V[F.v]?.r||5e4)/5e4));CH.c3=new Chart(document.getElementById('c3'),{type:'bar',data:{labels:Array.from({length:24},(_,i)=>i+'h'),datasets:[{data:hd,backgroundColor:hd.map(v=>v>1800?CL.r:v>1200?CL.y:v>600?CL.b:CL.g),borderRadius:3,borderSkipped:false}]},options:co({plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:8}}}}})})}
+function gVK(){const a=Object.keys(V);if(F.vc==='4w')return a.filter(k=>!['Bike','eBike'].includes(k));if(F.vc==='2w')return['Bike','eBike'];if(F.vc==='prem')return['Prime Sedan','Prime Plus','Prime SUV'];return a}
+function bV(){const vk=gVK(),vv=vk.map(k=>V[k]),cl=vk.map((_,i)=>C7[i%7]);document.getElementById('kV').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki p"><i class="fas fa-car-side"></i></div></div><div class="kv">${vk.length}</div><div class="kl">Types</div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-trophy"></i></div></div><div class="kv">${vk.reduce((a,k)=>V[k].r>V[a].r?k:a,vk[0])}</div><div class="kl">Most Booked</div></div><div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-gem"></i></div></div><div class="kv">${vk.reduce((a,k)=>V[k].rv>V[a].rv?k:a,vk[0])}</div><div class="kl">Top Revenue</div></div>`;dc('c4');CH.c4=new Chart(document.getElementById('c4'),{type:'bar',data:{labels:vk,datasets:[{data:vv.map(v=>v.d),backgroundColor:cl,borderRadius:5,borderSkipped:false}]},options:co({indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}})});dc('c5');CH.c5=new Chart(document.getElementById('c5'),{type:'bar',data:{labels:vk,datasets:[{data:vv.map(v=>v.r),backgroundColor:cl.map(c=>c+'B3'),borderRadius:5,borderSkipped:false}]},options:co({plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}})});dc('c6');CH.c6=new Chart(document.getElementById('c6'),{type:'doughnut',data:{labels:vk,datasets:[{data:vv.map(v=>v.rv),backgroundColor:cl,borderWidth:0}]},options:co({cutout:'55%',plugins:{legend:{position:'right',labels:{usePointStyle:true,padding:6,font:{size:10}}}}})});dc('c7');CH.c7=new Chart(document.getElementById('c7'),{type:'radar',data:{labels:vk,datasets:[{label:'Success%',data:vv.map(v=>v.s),backgroundColor:CL.p+'20',borderColor:CL.p,borderWidth:2,pointRadius:3},{label:'Rating×15',data:vv.map(v=>v.rt*15),backgroundColor:CL.y+'20',borderColor:CL.y,borderWidth:2,pointRadius:3}]},options:co({plugins:{legend:{position:'top',labels:{usePointStyle:true}}},scales:{r:{beginAtZero:true,ticks:{display:false}}}})});const tb=document.getElementById('tV');tb.innerHTML='';vk.forEach(k=>{const v=V[k],sf=Math.round(v.rt);tb.innerHTML+=`<tr><td><b>${k}</b></td><td>${v.r.toLocaleString()}</td><td>${v.d}km</td><td>₹${v.f}</td><td><div class="prog"><span style="font-size:11px">${v.s}%</span><div class="prog-t"><div class="prog-f" style="width:${v.s}%;background:${v.s>63?CL.g:CL.y}"></div></div></div></td><td><span class="stars">${'★'.repeat(sf)}${'☆'.repeat(5-sf)}</span></td></tr>`})}
+function bR(){const s=gS(),fd=gFD();let m=F.rv==='u5'?.7:F.rv==='5k'?.28:F.rv==='1k'?.02:1;document.getElementById('kR').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki p"><i class="fas fa-wallet"></i></div></div><div class="kv">${fmt(Math.round(s.rv*m))}</div><div class="kl">Revenue</div></div><div class="kpi"><div class="kpi-top"><div class="ki b"><i class="fas fa-receipt"></i></div></div><div class="kv">₹${s.af}</div><div class="kl">Avg Fare</div></div><div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-credit-card"></i></div></div><div class="kv">UPI</div><div class="kl">Top Payment</div></div>`;dc('c8');CH.c8=new Chart(document.getElementById('c8'),{type:'pie',data:{labels:Object.keys(PAY),datasets:[{data:Object.values(PAY).map(p=>p.r),backgroundColor:[CL.b,CL.g,CL.p,CL.pk,CL.y],borderWidth:0}]},options:co({plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:8}}}})});dc('c9');const x=document.getElementById('c9').getContext('2d');CH.c9=new Chart(x,{type:'line',data:{labels:fd.map(d=>d.lb),datasets:[{data:fd.map(d=>Math.round(d.r*m)),borderColor:CL.g,backgroundColor:grd(x,CL.g),fill:true,tension:.4,borderWidth:2,pointRadius:2}]},options:co({plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'₹'+(v/1e3).toFixed(0)+'K'}},x:{grid:{display:false},ticks:{font:{size:9}}}}})})}
+function bC(){const sc=F.cf!=='drv',sd=F.cf!=='cust';document.getElementById('kC').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-user-xmark"></i></div></div><div class="kv">6.8%</div><div class="kl">Cust Cancel</div></div><div class="kpi"><div class="kpi-top"><div class="ki r"><i class="fas fa-car-burst"></i></div></div><div class="kv">17.4%</div><div class="kl">Driver Cancel</div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-circle-check"></i></div></div><div class="kv">62%</div><div class="kl">Success</div></div><div class="kpi"><div class="kpi-top"><div class="ki pk"><i class="fas fa-indian-rupee-sign"></i></div></div><div class="kv">₹31.2L</div><div class="kl">Rev Lost</div></div>`;dc('c10');CH.c10=new Chart(document.getElementById('c10'),{type:'bar',data:{labels:Object.keys(CCR),datasets:[{data:sc?Object.values(CCR):Object.values(CCR).map(()=>0),backgroundColor:[CL.r,CL.y,CL.o,CL.b,CL.p],borderRadius:5,borderSkipped:false}]},options:co({indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:9}}}}})});dc('c11');CH.c11=new Chart(document.getElementById('c11'),{type:'bar',data:{labels:Object.keys(DCR),datasets:[{data:sd?Object.values(DCR):Object.values(DCR).map(()=>0),backgroundColor:[CL.b,CL.g,CL.y,CL.pk],borderRadius:5,borderSkipped:false}]},options:co({indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:9}}}}})})}
+function bRt(){document.getElementById('kRt').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-star"></i></div></div><div class="kv">4.02</div><div class="kl">Avg Cust</div></div><div class="kpi"><div class="kpi-top"><div class="ki b"><i class="fas fa-user-tie"></i></div></div><div class="kv">3.98</div><div class="kl">Avg Driver</div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-thumbs-up"></i></div></div><div class="kv">68%</div><div class="kl">≥4★</div></div><div class="kpi"><div class="kpi-top"><div class="ki r"><i class="fas fa-thumbs-down"></i></div></div><div class="kv">8.2%</div><div class="kl">≤2★</div></div>`;dc('c12');CH.c12=new Chart(document.getElementById('c12'),{type:'bar',data:{labels:Object.keys(V),datasets:[{data:Object.values(V).map(v=>v.rt),backgroundColor:C7.map(c=>c+'B3'),borderRadius:5,borderSkipped:false}]},options:co({plugins:{legend:{display:false}},scales:{y:{min:3,max:5},x:{grid:{display:false}}}})});dc('c13');CH.c13=new Chart(document.getElementById('c13'),{type:'bar',data:{labels:['1★','2★','3★','4★','5★'],datasets:[{data:[1200,2900,7800,11500,7600],backgroundColor:[CL.r,CL.o,CL.y,CL.b,CL.g],borderRadius:4,borderSkipped:false}]},options:co({plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}})})}
+function bI(){dc('c14');CH.c14=new Chart(document.getElementById('c14'),{type:'bar',data:{labels:['Current','Cancel -8%','Driver','Surge','Fleet','Target'],datasets:[{data:[112,131,138,145,149,149],backgroundColor:[CL.p+'B3',CL.g+'99',CL.g+'99',CL.g+'99',CL.g+'99',CL.y+'CC'],borderRadius:6,borderSkipped:false}]},options:co({plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'₹'+v+'L'}},x:{grid:{display:false}}}})})}
+function bL(){let areas=AA;if(F.lz!=='all'&&ZN[F.lz])areas=ZN[F.lz];if(F.loc)areas=areas.filter(a=>a===F.loc);const sorted=areas.map(a=>[a,LD[a]||0]).sort((a,b)=>b[1]-a[1]),tot=sorted.reduce((s,a)=>s+a[1],0);document.getElementById('locI').textContent=(F.lz==='all'?'All zones':F.lz.charAt(0).toUpperCase()+F.lz.slice(1))+(F.loc?' · '+F.loc:'')+' · Bengaluru';document.getElementById('kL').innerHTML=`<div class="kpi"><div class="kpi-top"><div class="ki p"><i class="fas fa-map-pin"></i></div></div><div class="kv">${areas.length}</div><div class="kl">Zones</div></div><div class="kpi"><div class="kpi-top"><div class="ki r"><i class="fas fa-fire"></i></div></div><div class="kv">${sorted[0]?sorted[0][0]:'—'}</div><div class="kl">Top</div></div><div class="kpi"><div class="kpi-top"><div class="ki g"><i class="fas fa-hashtag"></i></div></div><div class="kv">${tot.toLocaleString()}</div><div class="kl">Rides</div></div><div class="kpi"><div class="kpi-top"><div class="ki y"><i class="fas fa-clock"></i></div></div><div class="kv">8.5m</div><div class="kl">VTAT</div></div>`;dc('c15');CH.c15=new Chart(document.getElementById('c15'),{type:'bar',data:{labels:sorted.slice(0,10).map(l=>l[0]),datasets:[{data:sorted.slice(0,10).map(l=>l[1]),backgroundColor:[CL.r,CL.y,CL.b,CL.g,CL.p,CL.pk,CL.t,CL.o,'#06B6D4','#84CC16'],borderRadius:4,borderSkipped:false}]},options:co({indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{beginAtZero:true},y:{grid:{display:false}}}})});const lg=document.getElementById('locG');lg.innerHTML='';sorted.forEach(([a,c])=>{lg.innerHTML+=`<div class="lp${F.loc===a?' on':''}" onclick="pickLoc('${a}')"><i class="fas fa-map-pin" style="font-size:8px;color:${CL.r}"></i>${a}<span class="lc">${c}</span></div>`})}
+function pickLoc(l){F.loc=F.loc===l?null:l;bL();toast('info','fa-location-dot',F.loc||'All')}
+function bD(){const st=['Success','Cancelled by Customer','Cancelled by Driver','Driver Not Found'],pm=['Cash','UPI','Credit Card','Debit Card','Wallet'],vt=Object.keys(V);let h='<table><thead><tr><th>Date</th><th>ID</th><th>Status</th><th>Vehicle</th><th>Pickup</th><th>Drop</th><th>Fare</th><th>Payment</th></tr></thead><tbody>';for(let i=0;i<20;i++){const dy=Math.ceil(Math.random()*31),s=st[Math.random()<.62?0:Math.random()<.3?1:Math.random()<.5?2:3],ok=s==='Success';h+=`<tr><td>Jul ${dy}</td><td>CNR${String(1e6+i).slice(0,7)}</td><td>${s}</td><td>${vt[Math.floor(Math.random()*7)]}</td><td>${AA[Math.floor(Math.random()*50)]}</td><td>${AA[Math.floor(Math.random()*50)]}</td><td>${ok?'₹'+Math.round(50+Math.random()*950):''}</td><td>${ok?pm[Math.floor(Math.random()*5)]:''}</td></tr>`}h+='</tbody></table>';document.getElementById('dsP').innerHTML=h}
+function go(t,el){document.querySelectorAll('.pan').forEach(p=>p.classList.remove('on'));document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));document.getElementById('p-'+t).classList.add('on');if(el)el.classList.add('on');document.getElementById('crumb').textContent={overall:'Overall',vehicle:'Vehicle Type',revenue:'Revenue',cancel:'Cancellation',ratings:'Ratings',insights:'Insights',locations:'Locations',data:'Dataset'}[t]||t;if(window.innerWidth<=1024){document.getElementById('sb').classList.remove('open');document.getElementById('ov').classList.remove('show')}({insights:bI,data:bD,locations:bL}[t]||(()=>{}))();setTimeout(()=>Object.values(CH).forEach(c=>c?.resize?.()),50)}
+function toggleSB(){document.getElementById('sb').classList.toggle('open');document.getElementById('ov').classList.toggle('show')}
+function toggleTheme(){const h=document.documentElement,d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');document.getElementById('themeBtn').classList.toggle('dark',!d);updCC();buildAll();toast('info','fa-palette',d?'Light':'Dark')}
+function doRefresh(){const b=document.getElementById('btnR');if(b.classList.contains('loading'))return;b.classList.add('loading');DL=genD().map(d=>({...d,b:d.b+Math.round((Math.random()-.5)*40)}));setTimeout(()=>{buildAll();b.classList.remove('loading');toast('ok','fa-check-circle','Refreshed!')},800)}
+function openE(){document.getElementById('emod').classList.add('show');document.getElementById('eov').classList.add('show')}
+function closeE(){document.getElementById('emod').classList.remove('show');document.getElementById('eov').classList.remove('show')}
+function dl(c,n,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u)}
+function xCSV(){closeE();const s=gS();let c='Metric,Value\nBookings,'+s.tb+'\nSuccessful,'+s.sc+'\nRevenue,'+s.rv+'\nCancel%,'+s.cr+'\n\nVehicle,Rides,Dist,Fare,Success,Rating,Revenue\n';Object.entries(V).forEach(([k,v])=>c+=`${k},${v.r},${v.d},${v.f},${v.s},${v.rt},${v.rv}\n`);dl(c,'OLA_Report.csv','text/csv');toast('ok','fa-check-circle','CSV exported')}
+function xDS(){closeE();toast('info','fa-spinner','Generating...');setTimeout(()=>{const st=['Success','Cancelled by Customer','Cancelled by Driver','Driver Not Found'],pm=['Cash','UPI','Credit Card','Debit Card','Wallet'],vt=Object.keys(V);let c='Date,Time,Booking_ID,Status,Customer_ID,Vehicle,Pickup,Drop,V_TAT,C_TAT,Cancel_Cust,Cancel_Driver,Incomplete,Inc_Reason,Value,Payment,Distance,D_Rating,C_Rating\n';for(let i=0;i<50000;i++){const dy=Math.ceil(Math.random()*31),hr=Math.floor(Math.random()*24),rn=Math.random(),s=rn<.62?st[0]:rn<.69?st[1]:rn<.87?st[2]:st[3],ok=s==='Success';c+=`2024-07-${String(dy).padStart(2,'0')},${hr}:${String(Math.floor(Math.random()*60)).padStart(2,'0')},CNR${String(1e6+i).slice(0,7)},${s},CUS${1e4+Math.floor(Math.random()*9e4)},${vt[Math.floor(Math.random()*7)]},"${AA[Math.floor(Math.random()*50)]}","${AA[Math.floor(Math.random()*50)]}",${ok?(3+Math.random()*12).toFixed(1):''},${ok?(2+Math.random()*8).toFixed(1):''},,,,${ok?Math.round(50+Math.random()*950):''},${ok?pm[Math.floor(Math.random()*5)]:''},${ok?(Math.random()*25+1).toFixed(1):''},${ok?(1+Math.random()*4).toFixed(1):''},${ok?(1+Math.random()*4).toFixed(1):''}\n`}dl(c,'OLA_50K.csv','text/csv');toast('ok','fa-check-circle','Downloaded!')},500)}
+function xPDF(){closeE();const{jsPDF}=window.jspdf,doc=new jsPDF('l','mm','a4'),s=gS();doc.setFillColor(238,234,246);doc.rect(0,0,297,210,'F');doc.setTextColor(30,27,75);doc.setFontSize(24);doc.text('OLA Analytics Dashboard',20,22);doc.setFontSize(10);doc.setTextColor(148,144,176);doc.text('Rajeshwar Shingade · '+new Date().toLocaleDateString(),20,30);doc.setDrawColor(124,58,237);doc.line(20,34,277,34);const kp=[['Bookings',s.tb.toLocaleString()],['Success',s.sc.toLocaleString()],['Revenue',fmt(s.rv)],['Cancel',s.cr+'%']];kp.forEach((k,i)=>{doc.setFillColor(255,255,255);doc.roundedRect(20+i*64,40,58,18,3,3,'F');doc.setFontSize(8);doc.setTextColor(148,144,176);doc.text(k[0],24+i*64,47);doc.setFontSize(14);doc.setTextColor(30,27,75);doc.text(k[1],24+i*64,56)});doc.save('OLA_Dashboard.pdf');toast('ok','fa-check-circle','PDF done')}
+function xPPT(){closeE();const p=new PptxGenJS(),s=gS();p.author='Rajeshwar Shingade';let s1=p.addSlide();s1.background={fill:'EEEAF6'};s1.addText('OLA Analytics',{x:.5,y:1.5,w:9,h:1,fontSize:30,color:'1E1B4B',bold:true});s1.addText('Rajeshwar Shingade',{x:.5,y:2.8,w:9,h:.5,fontSize:14,color:'4C4680'});let s2=p.addSlide();s2.background={fill:'EEEAF6'};s2.addText('Metrics',{x:.5,y:.3,w:9,h:.5,fontSize:22,color:'1E1B4B',bold:true});[`Bookings: ${s.tb.toLocaleString()}`,`Revenue: ${fmt(s.rv)}`,`Cancel: ${s.cr}%`,`Rating: ${s.ar}`].forEach((m,i)=>s2.addText(m,{x:.5+(i%2)*4.5,y:1+Math.floor(i/2)*.7,w:4,h:.5,fontSize:14,color:'1E1B4B'}));p.writeFile({fileName:'OLA.pptx'});toast('ok','fa-check-circle','PPT done')}
+function toast(t,ic,msg){const c=document.getElementById('toasts'),e=document.createElement('div');e.className='toast '+t;e.innerHTML=`<i class="fas ${ic}"></i>${msg}`;c.appendChild(e);setTimeout(()=>e.remove(),3e3)}
+function buildAll(){updCC();bO();bV();bR();bC();bRt()}
+document.addEventListener('DOMContentLoaded',buildAll);
+</script>
+</body>
+</html>
