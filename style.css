@@ -1372,6 +1372,26 @@ ul { list-style: none; }
     justify-content: center;
 }
 
+.project-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.project-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    font-weight: 600;
+}
+
+.project-action i {
+    font-size: 0.95rem;
+}
+
 /* ==========================================
    CONTACT SECTION
    ========================================== */
@@ -1684,6 +1704,9 @@ ul { list-style: none; }
     }
     .project-card {
         padding: 24px;
+    }
+    .project-actions {
+        grid-template-columns: 1fr;
     }
     .section { padding: 70px 0; }
     .about-cta { flex-direction: column; }
